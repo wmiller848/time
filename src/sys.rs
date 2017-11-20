@@ -13,14 +13,10 @@ mod inner {
     use Tm;
 
     fn time_to_tm(ts: i64, tm: &mut Tm) {
-        let leapyear = |year| -> bool {
-            year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
-        };
+        let leapyear = |year| -> bool { year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) };
 
-        static _ytab: [[i64; 12]; 2] = [
-            [ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ],
-            [ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ]
-        ];
+        static _ytab: [[i64; 12]; 2] = [[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+                                        [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]];
 
         let mut year = 1970;
 
@@ -32,14 +28,10 @@ mod inner {
         tm.tm_hour = (dayclock / 3600) as i32;
         tm.tm_wday = ((dayno + 4) % 7) as i32;
         loop {
-            let yearsize = if leapyear(year) {
-                366
-            } else {
-                365
-            };
+            let yearsize = if leapyear(year) { 366 } else { 365 };
             if dayno >= yearsize {
-                    dayno -= yearsize;
-                    year += 1;
+                dayno -= yearsize;
+                year += 1;
             } else {
                 break;
             }
@@ -48,8 +40,8 @@ mod inner {
         tm.tm_yday = dayno as i32;
         let mut mon = 0;
         while dayno >= _ytab[if leapyear(year) { 1 } else { 0 }][mon] {
-                dayno -= _ytab[if leapyear(year) { 1 } else { 0 }][mon];
-                mon += 1;
+            dayno -= _ytab[if leapyear(year) { 1 } else { 0 }][mon];
+            mon += 1;
         }
         tm.tm_mon = mon as i32;
         tm.tm_mday = dayno as i32 + 1;
@@ -67,8 +59,8 @@ mod inner {
         let h = tm.tm_hour as i64;
         let mi = tm.tm_min as i64;
         let s = tm.tm_sec as i64;
-        (365*y + y/4 - y/100 + y/400 + 3*(m+1)/5 + 30*m + d - 719561)
-            * 86400 + 3600 * h + 60 * mi + s
+        (365 * y + y / 4 - y / 100 + y / 400 + 3 * (m + 1) / 5 + 30 * m + d - 719561) * 86400 +
+        3600 * h + 60 * mi + s
     }
 
     pub fn time_to_utc_tm(sec: i64, tm: &mut Tm) {
@@ -90,13 +82,19 @@ mod inner {
     }
 
     pub fn get_time() -> (i64, i32) {
-        let mut tv = syscall::TimeSpec { tv_sec: 0, tv_nsec: 0 };
+        let mut tv = syscall::TimeSpec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
         syscall::clock_gettime(syscall::CLOCK_REALTIME, &mut tv).unwrap();
         (tv.tv_sec as i64, tv.tv_nsec as i32)
     }
 
     pub fn get_precise_ns() -> u64 {
-        let mut ts = syscall::TimeSpec { tv_sec: 0, tv_nsec: 0 };
+        let mut ts = syscall::TimeSpec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
         syscall::clock_gettime(syscall::CLOCK_MONOTONIC, &mut ts).unwrap();
         (ts.tv_sec as u64) * 1000000000 + (ts.tv_nsec as u64)
     }
@@ -108,8 +106,10 @@ mod inner {
 
     impl fmt::Debug for SteadyTime {
         fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-            write!(fmt, "SteadyTime {{ tv_sec: {:?}, tv_nsec: {:?} }}",
-                   self.t.tv_sec, self.t.tv_nsec)
+            write!(fmt,
+                   "SteadyTime {{ tv_sec: {:?}, tv_nsec: {:?} }}",
+                   self.t.tv_sec,
+                   self.t.tv_nsec)
         }
     }
 
@@ -125,7 +125,7 @@ mod inner {
                 t: syscall::TimeSpec {
                     tv_sec: 0,
                     tv_nsec: 0,
-                }
+                },
             };
             syscall::clock_gettime(syscall::CLOCK_MONOTONIC, &mut t.t).unwrap();
             t
@@ -137,11 +137,11 @@ mod inner {
         fn sub(self, other: SteadyTime) -> Duration {
             if self.t.tv_nsec >= other.t.tv_nsec {
                 Duration::seconds(self.t.tv_sec as i64 - other.t.tv_sec as i64) +
-                    Duration::nanoseconds(self.t.tv_nsec as i64 - other.t.tv_nsec as i64)
+                Duration::nanoseconds(self.t.tv_nsec as i64 - other.t.tv_nsec as i64)
             } else {
                 Duration::seconds(self.t.tv_sec as i64 - 1 - other.t.tv_sec as i64) +
-                    Duration::nanoseconds(self.t.tv_nsec as i64 + ::NSEC_PER_SEC as i64 -
-                                          other.t.tv_nsec as i64)
+                Duration::nanoseconds(self.t.tv_nsec as i64 + ::NSEC_PER_SEC as i64 -
+                                      other.t.tv_nsec as i64)
             }
         }
     }
@@ -182,15 +182,14 @@ mod inner {
         fn cmp(&self, other: &SteadyTime) -> Ordering {
             match self.t.tv_sec.cmp(&other.t.tv_sec) {
                 Ordering::Equal => self.t.tv_nsec.cmp(&other.t.tv_nsec),
-                ord => ord
+                ord => ord,
             }
         }
     }
 
     impl PartialEq for SteadyTime {
         fn eq(&self, other: &SteadyTime) -> bool {
-            self.t.tv_sec == other.t.tv_sec &&
-                self.t.tv_nsec == other.t.tv_nsec
+            self.t.tv_sec == other.t.tv_sec && self.t.tv_nsec == other.t.tv_nsec
         }
     }
 
@@ -210,7 +209,7 @@ mod inner {
     pub use self::unix::*;
 
     #[cfg(target_os = "solaris")]
-    extern {
+    extern "C" {
         static timezone: time_t;
         static altzone: time_t;
     }
@@ -243,7 +242,7 @@ mod inner {
     #[cfg(any(target_os = "nacl", target_os = "solaris"))]
     unsafe fn timegm(tm: *mut libc::tm) -> time_t {
         use std::env::{set_var, var_os, remove_var};
-        extern {
+        extern "C" {
             fn tzset();
         }
 
@@ -343,8 +342,13 @@ mod inner {
 
         pub fn get_time() -> (i64, i32) {
             use std::ptr;
-            let mut tv = timeval { tv_sec: 0, tv_usec: 0 };
-            unsafe { libc::gettimeofday(&mut tv, ptr::null_mut()); }
+            let mut tv = timeval {
+                tv_sec: 0,
+                tv_usec: 0,
+            };
+            unsafe {
+                libc::gettimeofday(&mut tv, ptr::null_mut());
+            }
             (tv.tv_sec as i64, tv.tv_usec * 1000)
         }
 
@@ -357,7 +361,9 @@ mod inner {
         }
 
         #[derive(Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Debug)]
-        pub struct SteadyTime { t: u64 }
+        pub struct SteadyTime {
+            t: u64,
+        }
 
         impl SteadyTime {
             pub fn now() -> SteadyTime {
@@ -380,9 +386,7 @@ mod inner {
             type Output = SteadyTime;
             fn add(self, other: Duration) -> SteadyTime {
                 let delta = other.num_nanoseconds().unwrap();
-                SteadyTime {
-                    t: (self.t as i64 + delta) as u64
-                }
+                SteadyTime { t: (self.t as i64 + delta) as u64 }
             }
         }
     }
@@ -416,13 +420,21 @@ mod inner {
         use Duration;
 
         pub fn get_time() -> (i64, i32) {
-            let mut tv = libc::timespec { tv_sec: 0, tv_nsec: 0 };
-            unsafe { libc::clock_gettime(libc::CLOCK_REALTIME, &mut tv); }
+            let mut tv = libc::timespec {
+                tv_sec: 0,
+                tv_nsec: 0,
+            };
+            unsafe {
+                libc::clock_gettime(libc::CLOCK_REALTIME, &mut tv);
+            }
             (tv.tv_sec as i64, tv.tv_nsec as i32)
         }
 
         pub fn get_precise_ns() -> u64 {
-            let mut ts = libc::timespec { tv_sec: 0, tv_nsec: 0 };
+            let mut ts = libc::timespec {
+                tv_sec: 0,
+                tv_nsec: 0,
+            };
             unsafe {
                 libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut ts);
             }
@@ -436,8 +448,10 @@ mod inner {
 
         impl fmt::Debug for SteadyTime {
             fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-                write!(fmt, "SteadyTime {{ tv_sec: {:?}, tv_nsec: {:?} }}",
-                       self.t.tv_sec, self.t.tv_nsec)
+                write!(fmt,
+                       "SteadyTime {{ tv_sec: {:?}, tv_nsec: {:?} }}",
+                       self.t.tv_sec,
+                       self.t.tv_nsec)
             }
         }
 
@@ -453,11 +467,10 @@ mod inner {
                     t: libc::timespec {
                         tv_sec: 0,
                         tv_nsec: 0,
-                    }
+                    },
                 };
                 unsafe {
-                    assert_eq!(0, libc::clock_gettime(libc::CLOCK_MONOTONIC,
-                                                      &mut t.t));
+                    assert_eq!(0, libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut t.t));
                 }
                 t
             }
@@ -468,11 +481,11 @@ mod inner {
             fn sub(self, other: SteadyTime) -> Duration {
                 if self.t.tv_nsec >= other.t.tv_nsec {
                     Duration::seconds(self.t.tv_sec as i64 - other.t.tv_sec as i64) +
-                        Duration::nanoseconds(self.t.tv_nsec as i64 - other.t.tv_nsec as i64)
+                    Duration::nanoseconds(self.t.tv_nsec as i64 - other.t.tv_nsec as i64)
                 } else {
                     Duration::seconds(self.t.tv_sec as i64 - 1 - other.t.tv_sec as i64) +
-                        Duration::nanoseconds(self.t.tv_nsec as i64 + ::NSEC_PER_SEC as i64 -
-                                              other.t.tv_nsec as i64)
+                    Duration::nanoseconds(self.t.tv_nsec as i64 + ::NSEC_PER_SEC as i64 -
+                                          other.t.tv_nsec as i64)
                 }
             }
         }
@@ -513,15 +526,14 @@ mod inner {
             fn cmp(&self, other: &SteadyTime) -> Ordering {
                 match self.t.tv_sec.cmp(&other.t.tv_sec) {
                     Ordering::Equal => self.t.tv_nsec.cmp(&other.t.tv_nsec),
-                    ord => ord
+                    ord => ord,
                 }
             }
         }
 
         impl PartialEq for SteadyTime {
             fn eq(&self, other: &SteadyTime) -> bool {
-                self.t.tv_sec == other.t.tv_sec &&
-                    self.t.tv_nsec == other.t.tv_nsec
+                self.t.tv_sec == other.t.tv_sec && self.t.tv_nsec == other.t.tv_nsec
             }
         }
 
@@ -561,7 +573,7 @@ mod inner {
         let t = (((sec * HECTONANOSECS_IN_SEC) + HECTONANOSEC_TO_UNIX_EPOCH)) as u64;
         FILETIME {
             dwLowDateTime: t as DWORD,
-            dwHighDateTime: (t >> 32) as DWORD
+            dwHighDateTime: (t >> 32) as DWORD,
         }
     }
 
@@ -646,8 +658,7 @@ mod inner {
             let mut utc = mem::zeroed();
             let mut local = mem::zeroed();
             call!(FileTimeToSystemTime(&ft, &mut utc));
-            call!(SystemTimeToTzSpecificLocalTime(0 as *const _,
-                                                  &mut utc, &mut local));
+            call!(SystemTimeToTzSpecificLocalTime(0 as *const _, &mut utc, &mut local));
             system_time_to_tm(&local, tm);
 
             let local = system_time_to_file_time(&local);
@@ -681,8 +692,7 @@ mod inner {
             let mut ft = mem::zeroed();
             let mut utc = mem::zeroed();
             let mut sys_time = tm_to_system_time(tm);
-            call!(TzSpecificLocalTimeToSystemTime(0 as *mut _,
-                                                  &mut sys_time, &mut utc));
+            call!(TzSpecificLocalTimeToSystemTime(0 as *mut _, &mut sys_time, &mut utc));
             call!(SystemTimeToFileTime(&utc, &mut ft));
             file_time_to_unix_seconds(&ft)
         }
@@ -713,7 +723,9 @@ mod inner {
     impl SteadyTime {
         pub fn now() -> SteadyTime {
             let mut t = SteadyTime { t: 0 };
-            unsafe { QueryPerformanceCounter(&mut t.t); }
+            unsafe {
+                QueryPerformanceCounter(&mut t.t);
+            }
             t
         }
     }
@@ -722,8 +734,7 @@ mod inner {
         type Output = Duration;
         fn sub(self, other: SteadyTime) -> Duration {
             let diff = self.t as i64 - other.t as i64;
-            Duration::nanoseconds(mul_div_i64(diff, 1000000000,
-                                              frequency() as i64))
+            Duration::nanoseconds(mul_div_i64(diff, 1000000000, frequency() as i64))
         }
     }
 
@@ -767,7 +778,7 @@ mod inner {
             let ret = TzReset { old: tz };
             tz.Bias = 60 * 8;
             call!(SetTimeZoneInformation(&tz));
-            return ret
+            return ret;
         }
     }
 
@@ -794,7 +805,7 @@ mod inner {
             tz.StandardDate.wDay = 5;
             tz.StandardDate.wHour = 2;
             call!(SetTimeZoneInformation(&tz));
-            return ret
+            return ret;
         }
     }
 
@@ -823,12 +834,10 @@ mod inner {
             let mut tkp = mem::zeroed::<TKP>();
             assert_eq!(tkp.tkp.Privileges.len(), 0);
             let c = ::std::ffi::CString::new("SeTimeZonePrivilege").unwrap();
-            call!(LookupPrivilegeValueA(0 as *const _, c.as_ptr(),
-                                        &mut tkp.laa.Luid));
+            call!(LookupPrivilegeValueA(0 as *const _, c.as_ptr(), &mut tkp.laa.Luid));
             tkp.tkp.PrivilegeCount = 1;
             tkp.laa.Attributes = SE_PRIVILEGE_ENABLED;
-            call!(AdjustTokenPrivileges(hToken, FALSE, &mut tkp.tkp, 0,
-                                        0 as *mut _, 0 as *mut _));
+            call!(AdjustTokenPrivileges(hToken, FALSE, &mut tkp.tkp, 0, 0 as *mut _, 0 as *mut _));
         });
     }
 
@@ -848,15 +857,15 @@ mod inner {
 
     #[test]
     fn test_muldiv() {
-        assert_eq!(mul_div_i64( 1_000_000_000_001, 1_000_000_000, 1_000_000),
+        assert_eq!(mul_div_i64(1_000_000_000_001, 1_000_000_000, 1_000_000),
                    1_000_000_000_001_000);
         assert_eq!(mul_div_i64(-1_000_000_000_001, 1_000_000_000, 1_000_000),
                    -1_000_000_000_001_000);
-        assert_eq!(mul_div_i64(-1_000_000_000_001,-1_000_000_000, 1_000_000),
+        assert_eq!(mul_div_i64(-1_000_000_000_001, -1_000_000_000, 1_000_000),
                    1_000_000_000_001_000);
-        assert_eq!(mul_div_i64( 1_000_000_000_001, 1_000_000_000,-1_000_000),
+        assert_eq!(mul_div_i64(1_000_000_000_001, 1_000_000_000, -1_000_000),
                    -1_000_000_000_001_000);
-        assert_eq!(mul_div_i64( 1_000_000_000_001,-1_000_000_000,-1_000_000),
+        assert_eq!(mul_div_i64(1_000_000_000_001, -1_000_000_000, -1_000_000),
                    1_000_000_000_001_000);
     }
 }
