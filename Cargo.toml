@@ -16,7 +16,9 @@ travis-ci = { repository = "rust-lang-deprecated/time" }
 appveyor = { repository = "alexcrichton/time" }
 
 [dependencies]
-libc = "0.2.1"
+libc = { version = "0.2", default-features = false }
+nostd_io = { git = "https://github.com/wmiller848/nostd_io.git" }
+nostd_error = { git = "https://github.com/wmiller848/nostd_error.git" }
 rustc-serialize = { version = "0.3", optional = true }
 
 [target.'cfg(target_os = "redox")'.dependencies]

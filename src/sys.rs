@@ -4,9 +4,9 @@ pub use self::inner::*;
 
 #[cfg(target_os = "redox")]
 mod inner {
-    use std::fmt;
-    use std::cmp::Ordering;
-    use std::ops::{Add, Sub};
+    use core::fmt;
+    use core::cmp::Ordering;
+    use core::ops::{Add, Sub};
     use syscall;
 
     use Duration;
@@ -199,8 +199,7 @@ mod inner {
 #[cfg(unix)]
 mod inner {
     use libc::{self, time_t};
-    use std::mem;
-    use std::io;
+    use core::mem;
     use Tm;
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -269,7 +268,7 @@ mod inner {
             let sec = sec as time_t;
             let mut out = mem::zeroed();
             if libc::gmtime_r(&sec, &mut out).is_null() {
-                panic!("gmtime_r failed: {}", io::Error::last_os_error());
+                panic!("gmtime_r failed");
             }
             tm_to_rust_tm(&out, 0, tm);
         }
@@ -280,7 +279,7 @@ mod inner {
             let sec = sec as time_t;
             let mut out = mem::zeroed();
             if libc::localtime_r(&sec, &mut out).is_null() {
-                panic!("localtime_r failed: {}", io::Error::last_os_error());
+                panic!("localtime_r failed");
             }
             #[cfg(target_os = "solaris")]
             let gmtoff = {
@@ -321,8 +320,7 @@ mod inner {
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     mod mac {
         use libc::{self, timeval, mach_timebase_info};
-        use std::sync::{Once, ONCE_INIT};
-        use std::ops::{Add, Sub};
+        use core::ops::{Add, Sub};
         use Duration;
 
         fn info() -> &'static mach_timebase_info {
@@ -330,18 +328,15 @@ mod inner {
                 numer: 0,
                 denom: 0,
             };
-            static ONCE: Once = ONCE_INIT;
 
             unsafe {
-                ONCE.call_once(|| {
-                    mach_timebase_info(&mut INFO);
-                });
+                mach_timebase_info(&mut INFO);
                 &INFO
             }
         }
 
         pub fn get_time() -> (i64, i32) {
-            use std::ptr;
+            use core::ptr;
             let mut tv = timeval {
                 tv_sec: 0,
                 tv_usec: 0,
@@ -637,7 +632,7 @@ mod inner {
         ($name:ident($($arg:expr),*)) => {
             if $name($($arg),*) == 0 {
                 panic!(concat!(stringify!($name), " failed with: {}"),
-                       io::Error::last_os_error());
+                       nostd_io::Error::last_os_error());
             }
         }
     }

@@ -36,6 +36,9 @@
 #![allow(trivial_numeric_casts)]
 #![cfg_attr(test, deny(warnings))]
 
+#![no_std]
+#![feature(alloc)]
+
 #[cfg(target_os = "redox")]
 extern crate syscall;
 #[cfg(unix)]
@@ -46,6 +49,9 @@ extern crate kernel32;
 extern crate winapi;
 #[cfg(feature = "rustc-serialize")]
 extern crate rustc_serialize;
+extern crate alloc;
+extern crate nostd_io;
+extern crate nostd_error;
 
 #[cfg(test)]
 #[macro_use]
@@ -53,10 +59,12 @@ extern crate log;
 #[cfg(all(windows, test))]
 extern crate advapi32;
 
-use std::cmp::Ordering;
-use std::error::Error;
-use std::fmt;
-use std::ops::{Add, Sub};
+use core::cmp::Ordering;
+use nostd_error::Error;
+use core::fmt;
+use core::ops::{Add, Sub};
+use alloc::String;
+use alloc::string::ToString;
 
 pub use duration::{Duration, OutOfRangeError};
 
